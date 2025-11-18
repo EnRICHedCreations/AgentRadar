@@ -43,6 +43,7 @@ export default function Home() {
   const [tagExclude, setTagExclude] = useState<string[]>([]);
   const [tagMatchType, setTagMatchType] = useState<'any' | 'all' | 'exact'>('any');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [propertyType, setPropertyType] = useState<'residential' | 'land'>('residential');
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +64,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           zipCode,
+          propertyType,
           tagFilters: tagFilters.length > 0 ? tagFilters : undefined,
           tagMatchType,
           tagExclude: tagExclude.length > 0 ? tagExclude : undefined
@@ -207,6 +209,23 @@ export default function Home() {
                   maxLength={5}
                 />
               </div>
+
+              {/* Property Type Selector */}
+              <div>
+                <label htmlFor="propertyType" className="block text-sm font-medium text-gray-700 mb-1">
+                  Property Type
+                </label>
+                <select
+                  id="propertyType"
+                  value={propertyType}
+                  onChange={(e) => setPropertyType(e.target.value as 'residential' | 'land')}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="residential">Residential (Houses)</option>
+                  <option value="land">Land (Lots/Acreage)</option>
+                </select>
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}

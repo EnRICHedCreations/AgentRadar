@@ -13,6 +13,7 @@ class handler(BaseHTTPRequestHandler):
             data = json.loads(post_data)
 
             zip_code = data.get('zipCode')
+            property_type = data.get('propertyType', 'residential')
             tag_filters = data.get('tagFilters', [])
             tag_match_type = data.get('tagMatchType', 'any')
             tag_exclude = data.get('tagExclude', [])
@@ -22,10 +23,19 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             print(f"Scraping ZIP code: {zip_code}")
+            print(f"Property type: {property_type}")
             if tag_filters:
                 print(f"Tag filters: {tag_filters} (match type: {tag_match_type})")
             if tag_exclude:
                 print(f"Excluding tags: {tag_exclude}")
+
+            # Set property type filter based on selection
+            if property_type == 'land':
+                # For land, use land-specific tags
+                if not tag_filters:
+                    tag_filters = ['land', 'lot', 'acreage']
+                    tag_match_type = 'any'
+                    print(f"Land search - applying tags: {tag_filters}")
 
             # Scrape properties with tag filtering
             properties = scrape_property(
