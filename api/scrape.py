@@ -86,12 +86,21 @@ class handler(BaseHTTPRequestHandler):
 
                 if agent_email not in agents_map:
                     # Try multiple phone field names
-                    agent_phone = (
+                    agent_phone_raw = (
                         prop.get('agent_phone') or
                         prop.get('agent_primary_phone') or
                         prop.get('primary_phone') or
                         prop.get('agent_phones')
                     )
+
+                    # Handle phone number if it's an object (e.g., {ext, primary, type, number})
+                    agent_phone = None
+                    if agent_phone_raw:
+                        if isinstance(agent_phone_raw, dict):
+                            # Extract 'number' or 'primary' field from phone object
+                            agent_phone = agent_phone_raw.get('number') or agent_phone_raw.get('primary')
+                        else:
+                            agent_phone = str(agent_phone_raw)
 
                     agents_map[agent_email] = {
                         'agent_name': prop.get('agent_name') or 'Unknown',
@@ -105,14 +114,22 @@ class handler(BaseHTTPRequestHandler):
                 else:
                     # Update phone if we found one and didn't have one before
                     if not agents_map[agent_email]['agent_phone']:
-                        agent_phone = (
+                        agent_phone_raw = (
                             prop.get('agent_phone') or
                             prop.get('agent_primary_phone') or
                             prop.get('primary_phone') or
                             prop.get('agent_phones')
                         )
-                        if agent_phone:
-                            agents_map[agent_email]['agent_phone'] = agent_phone
+
+                        # Handle phone number if it's an object
+                        if agent_phone_raw:
+                            if isinstance(agent_phone_raw, dict):
+                                agent_phone = agent_phone_raw.get('number') or agent_phone_raw.get('primary')
+                            else:
+                                agent_phone = str(agent_phone_raw)
+
+                            if agent_phone:
+                                agents_map[agent_email]['agent_phone'] = agent_phone
 
                 # Add property to agent's listings
                 agents_map[agent_email]['stale_listings'].append({
