@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 interface Agent {
   agent_name: string;
@@ -44,11 +44,48 @@ export default function Home() {
   const [tagMatchType, setTagMatchType] = useState<'any' | 'all' | 'exact'>('any');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [propertyType, setPropertyType] = useState<'residential' | 'land'>('residential');
+  const [konamiUnlocked, setKonamiUnlocked] = useState(false);
+  const [konamiSequence, setKonamiSequence] = useState<string[]>([]);
+
+  // Konami code: up, up, down, down, left, right, left, right, b, a
+  const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+
+  // Listen for Konami code
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      setKonamiSequence(prev => {
+        const newSequence = [...prev, e.key].slice(-10);
+
+        // Check if sequence matches Konami code
+        if (newSequence.length === konamiCode.length) {
+          const matches = newSequence.every((key, i) => key === konamiCode[i]);
+          if (matches && !konamiUnlocked) {
+            setKonamiUnlocked(true);
+            // Show a subtle notification
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE');
+            audio.volume = 0.3;
+            audio.play().catch(() => {});
+          }
+        }
+
+        return newSequence;
+      });
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [konamiUnlocked]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!zipCode || zipCode.length !== 5) {
+    if (!zipCode) {
+      alert(konamiUnlocked ? 'Please enter a ZIP code or city name' : 'Please enter a valid 5-digit ZIP code');
+      return;
+    }
+
+    // If Konami code not unlocked, enforce ZIP validation
+    if (!konamiUnlocked && zipCode.length !== 5) {
       alert('Please enter a valid 5-digit ZIP code');
       return;
     }
@@ -197,16 +234,32 @@ export default function Home() {
             <div className="flex gap-4 items-end mb-4">
               <div className="flex-1">
                 <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-2">
-                  ZIP Code
+                  {konamiUnlocked ? (
+                    <span className="flex items-center gap-2">
+                      Location <span className="text-xs text-purple-600 font-bold">✨ CITY MODE UNLOCKED</span>
+                    </span>
+                  ) : (
+                    'ZIP Code'
+                  )}
                 </label>
                 <input
                   type="text"
                   id="zipCode"
                   value={zipCode}
-                  onChange={(e) => setZipCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                  placeholder="Enter 5-digit ZIP code"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  maxLength={5}
+                  onChange={(e) => {
+                    if (konamiUnlocked) {
+                      setZipCode(e.target.value);
+                    } else {
+                      setZipCode(e.target.value.replace(/\D/g, '').slice(0, 5));
+                    }
+                  }}
+                  placeholder={konamiUnlocked ? "Enter ZIP code or city name (e.g. 'Dallas, TX')" : "Enter 5-digit ZIP code"}
+                  className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:border-transparent ${
+                    konamiUnlocked
+                      ? 'border-purple-300 focus:ring-purple-500 bg-purple-50'
+                      : 'border-gray-300 focus:ring-blue-500'
+                  }`}
+                  maxLength={konamiUnlocked ? 100 : 5}
                 />
               </div>
 
