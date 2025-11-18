@@ -69,6 +69,12 @@ class handler(BaseHTTPRequestHandler):
 
             print(f"Found {len(stale_props)} stale properties")
 
+            # Debug: Log available fields in first property
+            if stale_props:
+                print(f"Sample property fields: {list(stale_props[0].keys())}")
+                first_prop = stale_props[0]
+                print(f"Agent phone fields - agent_phone: {first_prop.get('agent_phone')}, agent_primary_phone: {first_prop.get('agent_primary_phone')}, primary_phone: {first_prop.get('primary_phone')}")
+
             # Group by agent
             agents_map = {}
 
@@ -79,15 +85,34 @@ class handler(BaseHTTPRequestHandler):
                     continue
 
                 if agent_email not in agents_map:
+                    # Try multiple phone field names
+                    agent_phone = (
+                        prop.get('agent_phone') or
+                        prop.get('agent_primary_phone') or
+                        prop.get('primary_phone') or
+                        prop.get('agent_phones')
+                    )
+
                     agents_map[agent_email] = {
                         'agent_name': prop.get('agent_name') or 'Unknown',
                         'agent_email': agent_email,
-                        'agent_phone': prop.get('agent_phone'),
+                        'agent_phone': agent_phone,
                         'broker_name': prop.get('broker_name'),
                         'office_name': prop.get('office_name'),
                         'office_phone': prop.get('office_phone'),
                         'stale_listings': []
                     }
+                else:
+                    # Update phone if we found one and didn't have one before
+                    if not agents_map[agent_email]['agent_phone']:
+                        agent_phone = (
+                            prop.get('agent_phone') or
+                            prop.get('agent_primary_phone') or
+                            prop.get('primary_phone') or
+                            prop.get('agent_phones')
+                        )
+                        if agent_phone:
+                            agents_map[agent_email]['agent_phone'] = agent_phone
 
                 # Add property to agent's listings
                 agents_map[agent_email]['stale_listings'].append({
