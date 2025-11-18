@@ -54,12 +54,13 @@ class handler(BaseHTTPRequestHandler):
             print(f"Found {len(props_list)} total properties")
 
             # Filter out pending sales - only show active listings
+            # Keep properties that either don't have a status field or have an active status
             active_props = [
                 p for p in props_list
-                if p.get('status') and p.get('status').lower() not in ['pending', 'contingent', 'pending_continue_to_show']
+                if not p.get('status') or p.get('status').lower() not in ['pending', 'contingent', 'pending_continue_to_show']
             ]
 
-            print(f"Found {len(active_props)} active properties (excluded pending sales)")
+            print(f"Found {len(active_props)} active properties (excluded {len(props_list) - len(active_props)} pending sales)")
 
             # Filter for stale listings (90+ days)
             stale_props = [
