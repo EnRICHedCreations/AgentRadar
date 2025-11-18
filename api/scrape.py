@@ -94,11 +94,21 @@ class handler(BaseHTTPRequestHandler):
                         prop.get('agent_phones')
                     )
 
-                    # Handle phone number if it's an object (e.g., {ext, primary, type, number})
+                    # Handle phone number if it's an object or list
                     agent_phone = None
                     if agent_phone_raw:
-                        if isinstance(agent_phone_raw, dict):
-                            # Extract 'number' or 'primary' field from phone object
+                        if isinstance(agent_phone_raw, list):
+                            # It's a list of phone objects - find the primary one
+                            for phone_obj in agent_phone_raw:
+                                if isinstance(phone_obj, dict) and phone_obj.get('number'):
+                                    # Prefer primary mobile, then primary office, then any
+                                    if phone_obj.get('primary'):
+                                        if not agent_phone or phone_obj.get('type') == 'Mobile':
+                                            agent_phone = phone_obj.get('number')
+                                    elif not agent_phone:
+                                        agent_phone = phone_obj.get('number')
+                        elif isinstance(agent_phone_raw, dict):
+                            # Extract 'number' field from single phone object
                             agent_phone = agent_phone_raw.get('number') or agent_phone_raw.get('primary')
                         else:
                             agent_phone = str(agent_phone_raw)
@@ -122,9 +132,20 @@ class handler(BaseHTTPRequestHandler):
                             prop.get('agent_phones')
                         )
 
-                        # Handle phone number if it's an object
+                        # Handle phone number if it's an object or list
+                        agent_phone = None
                         if agent_phone_raw:
-                            if isinstance(agent_phone_raw, dict):
+                            if isinstance(agent_phone_raw, list):
+                                # It's a list of phone objects - find the primary one
+                                for phone_obj in agent_phone_raw:
+                                    if isinstance(phone_obj, dict) and phone_obj.get('number'):
+                                        # Prefer primary mobile, then primary office, then any
+                                        if phone_obj.get('primary'):
+                                            if not agent_phone or phone_obj.get('type') == 'Mobile':
+                                                agent_phone = phone_obj.get('number')
+                                        elif not agent_phone:
+                                            agent_phone = phone_obj.get('number')
+                            elif isinstance(agent_phone_raw, dict):
                                 agent_phone = agent_phone_raw.get('number') or agent_phone_raw.get('primary')
                             else:
                                 agent_phone = str(agent_phone_raw)
