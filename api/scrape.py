@@ -53,9 +53,17 @@ class handler(BaseHTTPRequestHandler):
 
             print(f"Found {len(props_list)} total properties")
 
+            # Filter out pending sales - only show active listings
+            active_props = [
+                p for p in props_list
+                if p.get('status') and p.get('status').lower() not in ['pending', 'contingent', 'pending_continue_to_show']
+            ]
+
+            print(f"Found {len(active_props)} active properties (excluded pending sales)")
+
             # Filter for stale listings (90+ days)
             stale_props = [
-                p for p in props_list
+                p for p in active_props
                 if p.get('days_on_mls') and p.get('days_on_mls') >= 90
             ]
 
@@ -141,7 +149,7 @@ class handler(BaseHTTPRequestHandler):
             response = {
                 'success': True,
                 'zip_code': zip_code,
-                'total_properties': len(props_list),
+                'total_properties': len(active_props),
                 'stale_properties': len(stale_props),
                 'agents': agents_list,
                 'scraped_at': datetime.now().isoformat()
